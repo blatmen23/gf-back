@@ -53,7 +53,7 @@ class Groups(Base):
 
 class Students(Base):
     __tablename__ = "students"
-    # id теперь это ФИО студента
+    # id теперь это хеш от ФИО студента
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=False)
     student: Mapped[str] = mapped_column(nullable=False)
     group_id: Mapped[int] = mapped_column(ForeignKey("groups_.id", ondelete="CASCADE"))
@@ -86,7 +86,7 @@ class OldGroups(Base):
 class OldStudents(Base):
     __tablename__ = "old_students"
 
-    # id теперь это ФИО студента
+    # id теперь это хеш от ФИО студента
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=False)
     student: Mapped[str] = mapped_column(nullable=False)
     group_id: Mapped[int] = mapped_column(ForeignKey("old_groups_.id", ondelete="CASCADE"))
