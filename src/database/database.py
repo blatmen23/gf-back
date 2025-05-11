@@ -1,3 +1,4 @@
+from functools import wraps
 from typing import AsyncGenerator
 from sqlalchemy.ext.asyncio import (create_async_engine,
                                     AsyncEngine,
@@ -26,7 +27,7 @@ class Database(Singleton):
             pool_size=pool_size,
             max_overflow=max_overflow
         )
-        self.session_factory = async_sessionmaker(
+        self.session_factory: async_sessionmaker[AsyncSession] = async_sessionmaker(
             bind=self.engine,
             autoflush=False,
             autocommit=False,
@@ -43,4 +44,21 @@ class Database(Singleton):
 
 database = Database(url=str(settings.db.url),
                     echo=settings.db.echo)
+
+async def connection(func):
+    @wraps(func)
+    async def wrapper(*args, **kwargs):
+        async with database.session_factory() as session:
+            try:
+                result = await func(*args, session=session, **kwargs)
+                await session.flush()
+                await session.commit()
+                return result
+            except Exception as e:
+                print("Error accessing the database. @connection")
+                raise e
+            finally:
+                await session.close()
+    return wrapper
+
 

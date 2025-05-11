@@ -72,7 +72,7 @@ class Scraper:
             response: ClientResponse = await session.get(url=url,
                                                          params=params,
                                                          headers=self.get_random_headers())
-            groups_data = loads(await response.text())[0:128:1]
+            groups_data = loads(await response.text())[0:36:1]
 
             for group_data in groups_data:
                 institute_num = int(
@@ -167,25 +167,20 @@ class Scraper:
             res = await asyncio.gather(
                 *[self.get_students_from_group(group=group) for group in
                   groups_pool])  # [[1, 2], [], [3, 2], [0, 23, 4], [], []]
-            res = [r for r in res if r]  # [[1, 2], [3, 2], [0, 23, 4]]
-            res = [i for i in [r for r in res]]  # [1, 2, 3, 2, 0, 23, 4]
 
-            await asyncio.sleep(settings.scraper.time_delta)
-            if self.exception_counter < settings.scraper.max_exception_counter:
-                print(f"\nreturned {len(res)} students")
-                print(f"groups in queue: {len(self.groups)}, "
-                      f"exception_counter={self.exception_counter}/{settings.scraper.max_exception_counter}")
-                yield res
-            else:
+            if self.exception_counter > settings.scraper.max_exception_counter:
                 raise "self.exception_counter more than 100!"
 
+            students = []  # [1, 2, 3, 2, 0, 23, 4]
+            for r_list in res:
+                if not r_list:
+                    continue
+                for r in r_list:
+                    students.append(r)
 
-# def remove_duplicates(self):
-#     unique_students = {}
-#
-#     for student in self.students:
-#         if student.student not in unique_students:
-#             unique_students[student.student] = student
-#         else:
-#             print(f"duplicate has been deleted: {student}")
-#     self.students = list(unique_students.values())
+            print(f"\nreturned {len(students)} students")
+            print(f"groups in queue: {len(self.groups)}, "
+                  f"exception_counter={self.exception_counter}/{settings.scraper.max_exception_counter}")
+
+            yield students
+            await asyncio.sleep(settings.scraper.time_delta)

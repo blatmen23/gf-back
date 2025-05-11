@@ -1,4 +1,4 @@
-import datetime
+from datetime import datetime
 from typing import List
 
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
@@ -10,7 +10,9 @@ class Base(DeclarativeBase):
         dict: JSON
     }
 
-    date: Mapped[datetime.datetime] = mapped_column(default=func.now())
+    created_at: Mapped[datetime] = mapped_column(default=func.now())
+
+# --------------------
 
 class ReportsArchive(Base):
     __tablename__ = "reports_archive"
@@ -30,6 +32,39 @@ class StudentsArchive(Base):
 
 # --------------------
 
+class InstitutesTMP(Base):
+    __tablename__ = "institutes_tmp"
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=False)
+    institute: Mapped[str] = mapped_column(nullable=False)
+    institute_num: Mapped[int] = mapped_column(nullable=False)
+
+    groups: Mapped[List["GroupsTMP"]] = relationship(back_populates="institute")
+
+class GroupsTMP(Base):
+    __tablename__ = "groups_tmp"
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=False)
+    group_: Mapped[str] = mapped_column(nullable=False, autoincrement=False)
+    course: Mapped[int] = mapped_column(nullable=False)
+    institute_id: Mapped[int] = mapped_column(ForeignKey("institutes_tmp.id", ondelete="CASCADE"))
+
+    institute: Mapped["InstitutesTMP"] = relationship(back_populates="groups")
+    students: Mapped[List["StudentsTMP"]] = relationship(back_populates="group_")
+
+
+class StudentsTMP(Base):
+    __tablename__ = "students_tmp"
+    # id теперь это хеш от ФИО студента
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=False)
+    student: Mapped[str] = mapped_column(nullable=False)
+    group_id: Mapped[int] = mapped_column(ForeignKey("groups_tmp.id", ondelete="CASCADE"))
+    leader: Mapped[bool] = mapped_column(default=False)
+
+    group_: Mapped["GroupsTMP"] = relationship(back_populates="students")
+
+# --------------------
+
 class Institutes(Base):
     __tablename__ = "institutes"
 
@@ -37,7 +72,7 @@ class Institutes(Base):
     institute: Mapped[str] = mapped_column(nullable=False)
     institute_num: Mapped[int] = mapped_column(nullable=False)
 
-    groups: Mapped[List["Groups"]] = relationship(back_populates="institutes")
+    groups: Mapped[List["Groups"]] = relationship(back_populates="institute")
 
 class Groups(Base):
     __tablename__ = "groups_"
@@ -47,8 +82,8 @@ class Groups(Base):
     course: Mapped[int] = mapped_column(nullable=False)
     institute_id: Mapped[int] = mapped_column(ForeignKey("institutes.id", ondelete="CASCADE"))
 
-    institutes: Mapped["Institutes"] = relationship(back_populates="groups_")
-    students: Mapped[List["Groups"]] = relationship(back_populates="groups_")
+    institute: Mapped["Institutes"] = relationship(back_populates="groups")
+    students: Mapped[List["Students"]] = relationship(back_populates="group_")
 
 
 class Students(Base):
@@ -59,37 +94,37 @@ class Students(Base):
     group_id: Mapped[int] = mapped_column(ForeignKey("groups_.id", ondelete="CASCADE"))
     leader: Mapped[bool] = mapped_column(default=False)
 
-    groups: Mapped["Groups"] = relationship(back_populates="students")
+    group_: Mapped["Groups"] = relationship(back_populates="students")
 
 # --------------------
 
-class OldInstitutes(Base):
-    __tablename__ = "old_institutes"
+class InstitutesOld(Base):
+    __tablename__ = "institutes_old"
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=False)
     institute: Mapped[str] = mapped_column(nullable=False)
     institute_num: Mapped[int] = mapped_column(nullable=False)
 
-    groups: Mapped[List["OldGroups"]] = relationship(back_populates="old_institutes")
+    groups: Mapped[List["GroupsOld"]] = relationship(back_populates="institute")
 
-class OldGroups(Base):
-    __tablename__ = "old_groups_"
+class GroupsOld(Base):
+    __tablename__ = "groups_old"
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=False)
     group_: Mapped[str] = mapped_column(nullable=False, autoincrement=False)
     course: Mapped[int] = mapped_column(nullable=False)
-    institute_id: Mapped[int] = mapped_column(ForeignKey("old_institutes.id", ondelete="CASCADE"))
+    institute_id: Mapped[int] = mapped_column(ForeignKey("institutes_old.id", ondelete="CASCADE"))
 
-    institutes: Mapped["OldInstitutes"] = relationship(back_populates="old_groups_")
-    students: Mapped[List["OldStudents"]] = relationship(back_populates="old_groups_")
+    institute: Mapped["InstitutesOld"] = relationship(back_populates="groups")
+    students: Mapped[List["StudentsOld"]] = relationship(back_populates="group_")
 
-class OldStudents(Base):
-    __tablename__ = "old_students"
 
+class StudentsOld(Base):
+    __tablename__ = "students_old"
     # id теперь это хеш от ФИО студента
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=False)
     student: Mapped[str] = mapped_column(nullable=False)
-    group_id: Mapped[int] = mapped_column(ForeignKey("old_groups_.id", ondelete="CASCADE"))
+    group_id: Mapped[int] = mapped_column(ForeignKey("groups_old.id", ondelete="CASCADE"))
     leader: Mapped[bool] = mapped_column(default=False)
 
-    groups: Mapped["OldGroups"] = relationship(back_populates="old_students")
+    group_: Mapped["GroupsOld"] = relationship(back_populates="students")

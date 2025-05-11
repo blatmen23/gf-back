@@ -12,6 +12,7 @@ async def institutes() -> List[Institute]:
 
 @router.get("/groups")
 async def groups() -> List[Group]:
+
     return []
 
 @router.get("/students")

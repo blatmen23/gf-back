@@ -5,3 +5,5 @@ class Group(BaseModel):
     group: str
     course: int
     institute_num: int
+# crud
+# solid
